@@ -11,15 +11,17 @@ namespace Pasgateway.Controllers;
     public class SensorReadingController : ControllerBase
     {
         private readonly ILogger<SensorReadingController> logger;
+
+        #pragma warning disable CS8618 // Nullable warning
         private static DeviceClient deviceClient;
+        #pragma warning restore CS8618
+
         private static readonly TransportType transportType = TransportType.Mqtt;
         private readonly string connectionString;
         private readonly string accessKey;
         private readonly string allowedClient;
-
-        private readonly int skipMessageCount;
-
-        private int currentMessageCount = 0;
+        private readonly int skipEventCount;
+        private int currentEventCount = 0;
         private readonly IConfiguration config;    
         
         public SensorReadingController(ILogger<SensorReadingController> loggerInstance, IConfiguration configuration)
@@ -30,7 +32,7 @@ namespace Pasgateway.Controllers;
             accessKey = config["API_ACCESS_KEY"];
             allowedClient = config["ALLOWED_SENSOR_ID"];
 
-            Int32.TryParse(config["SKIP_MESSAGE_COUNT"], out skipMessageCount);
+            Int32.TryParse(config["SKIP_EVENT_COUNT"], out skipEventCount);
 
             connectionString = config["IOTHUB_DEVICE_CONNECTION_STRING"];
             deviceClient = DeviceClient.CreateFromConnectionString(connectionString, transportType);
@@ -51,10 +53,10 @@ namespace Pasgateway.Controllers;
 
             // if we want to filter how many messages we send to Azure we check here.
             // if skipMessageCount is set to 0 then we don't run this logic.
-            if(skipMessageCount != 0 && currentMessageCount == skipMessageCount)
+            if(skipEventCount != 0 && currentEventCount == skipEventCount)
             {
                 logger.LogInformation("Resetting message skipped count to 0");
-                currentMessageCount = 0;
+                currentEventCount = 0;
                 return Ok();
             }
 
@@ -68,7 +70,9 @@ namespace Pasgateway.Controllers;
                             new
                             {
                                 name = data.SensorName,
+                                #pragma warning disable CS8604 // Nullable warning
                                 readtime = DateTime.Parse(data.ReadingTime),
+                                #pragma warning restore CS8604 
                                 latitude = data.Latitude,
                                 longitude = data.Longitude,
                                 temperature = tempCelsius,
@@ -96,8 +100,8 @@ namespace Pasgateway.Controllers;
                 logger.LogError(ex, $"Failed to send message to Azure IoT Hub. Reason: {ex.Message}");
             }
 
-            if(skipMessageCount != 0)
-                currentMessageCount++;
+            if(skipEventCount != 0)
+                currentEventCount++;
 
             return Ok();
         }
