@@ -1,17 +1,26 @@
-# syntax=docker/dockerfile:1
-FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build-env
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS base
 WORKDIR /app
+EXPOSE 5000
 
-# Copy csproj and restore as distinct layers
-# COPY *.csproj ./
-RUN dotnet restore
+ENV ASPNETCORE_URLS=http://+:5000
 
-# Copy everything else and build
-# COPY ../engine/examples ./
-RUN dotnet publish -c Release -o out
+# Creates a non-root user with an explicit UID and adds permission to access the /app folder
+# For more info, please refer to https://aka.ms/vscode-docker-dotnet-configure-containers
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
 
-# Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0
+FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
+WORKDIR /src
+COPY ["pasgateway.csproj", "./"]
+RUN dotnet restore "pasgateway.csproj"
+COPY . .
+WORKDIR "/src/."
+RUN dotnet build "pasgateway.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "pasgateway.csproj" -c Release -o /app/publish
+
+FROM base AS final
 WORKDIR /app
-COPY --from=build-env /app/out .
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "pasgateway.dll"]
