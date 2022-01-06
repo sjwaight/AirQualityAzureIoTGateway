@@ -6,6 +6,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// register our IoT Device Client as a Singleton
+builder.Services.AddSingleton<Pasgateway.ClientSingleton.IDeviceClientHost, Pasgateway.ClientSingleton.DeviceClientHost>();
 
 var app = builder.Build();
 

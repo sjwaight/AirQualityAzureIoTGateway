@@ -5,26 +5,21 @@ namespace Pasgateway.Controllers;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Azure.Devices.Client;
     using Pasgateway.Models;
+    using Pasgateway.ClientSingleton;
 
     [ApiController]
     [Route("[controller]")]
     public class SensorReadingController : ControllerBase
     {
         private readonly ILogger<SensorReadingController> logger;
-
-        #pragma warning disable CS8618 // Nullable warning
-        private static DeviceClient deviceClient;
-        #pragma warning restore CS8618
-
-        private static readonly TransportType transportType = TransportType.Mqtt;
-        private readonly string connectionString;
+        private readonly IDeviceClientHost deviceClientHost;
         private readonly string accessKey;
         private readonly string allowedClient;
         private readonly int skipEventCount;
         private int currentEventCount = 0;
         private readonly IConfiguration config;    
         
-        public SensorReadingController(ILogger<SensorReadingController> loggerInstance, IConfiguration configuration)
+        public SensorReadingController(ILogger<SensorReadingController> loggerInstance, IConfiguration configuration, IDeviceClientHost clientHost)
         {
             config = configuration;
             logger = loggerInstance;
@@ -34,8 +29,7 @@ namespace Pasgateway.Controllers;
 
             Int32.TryParse(config["SKIP_EVENT_COUNT"], out skipEventCount);
 
-            connectionString = config["IOTHUB_DEVICE_CONNECTION_STRING"];
-            deviceClient = DeviceClient.CreateFromConnectionString(connectionString, transportType);
+            deviceClientHost = clientHost;
         }
 
         [HttpPost]
@@ -93,7 +87,7 @@ namespace Pasgateway.Controllers;
                 logger.LogInformation($"SensorId: {data.SensorId} | Name: {data.SensorName} | Temp (C): {tempCelsius}");
 
                 // Send the telemetry message to Azure IoT Hub
-                await deviceClient.SendEventAsync(message);
+                await deviceClientHost.Instance.SendEventAsync(message);
             }
             catch (Exception ex)
             {
