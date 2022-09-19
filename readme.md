@@ -14,7 +14,7 @@ The resulting Docker image is [published to Docker Hub](https://hub.docker.com/r
 
 When you run the application it expects the following four configuration items.
 
-- IOTHUB_DEVICE_CONNECTION_STRING: full connection string for the Azure IoT Hub instance you wish to publish events to.
+- IOTHUB_DEVICE_CONNECTION_STRING: full connection string for the Azure IoT Hub instance you wish to publish events to. This can be obtained from the Device properties blade in the Azure Portal.
 - API_ACCESS_KEY: a HTTP header key you will set on your PA-II device so that you can ensure only an authorised device can use your gateway. 
 - ALLOWED_SENSOR_ID: the hostname of the Sensor that will be using the gateway. This will be in the format of a MAC address.
 - SKIP_EVENT_COUNT: if you want to limit the number of events sent to Azure, you can tell the gateway to skip every X message. Set to 0 if you want to send all events.
